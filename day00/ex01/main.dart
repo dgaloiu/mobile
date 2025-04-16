@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Ex00',
+      title: 'Ex01',
       theme: ThemeData(
                 colorScheme: ColorScheme.fromSeed(seedColor: Color.fromRGBO(250, 241, 217, 1)),
       ),
@@ -33,7 +33,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isSakuraBackground = true;
 
   void buttonPressed() {
-    print('One of the buttons was pressed');
+    _isSakuraBackground ? print('Going to wave'): print('Going to sakura');
         setState(() {
       _isSakuraBackground = !_isSakuraBackground;
     });
@@ -57,6 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
           
           if (details.primaryVelocity!.abs() > swipeThreshold) {
             // print('Swipe detected! Changing background.');
+            _isSakuraBackground ? print('Going to wave'): print('Going to sakura');
             setState(() {
               _isSakuraBackground = !_isSakuraBackground;
             });
