@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:developer' as developer;
 
 void main() {
   runApp(const MyApp());
@@ -56,11 +55,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void handleButtonPress(String buttonText) {
-    developer.log('Button pressed: $buttonText');
-    if (inputController.text == '0') {
-      inputController.text = buttonText;
+    print('Button pressed: $buttonText');
+    if (buttonText == 'C') {
+      inputController.text = inputController.text.isNotEmpty && inputController.text.length != 1
+          ? inputController.text.substring(0, inputController.text.length - 1)
+          : '0';
+    } else if (buttonText == 'AC') {
+      inputController.text = '0';
+      resultController.text = '0';
+    } else if (buttonText == '=') {
+      resultController.text = inputController.text;
     } else {
-      inputController.text += buttonText;
+      if (inputController.text == '0' &&
+          ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].contains(buttonText)) {
+        inputController.text = buttonText;
+      } else if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].contains(buttonText)) {
+        inputController.text += buttonText;
+      }
     }
   }
 
@@ -76,6 +87,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    final double textFieldHeight = screenSize.height * 0.06;
+    final double fontSize = screenSize.width * 0.05;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,49 +102,71 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
+          final topContainerHeight = isLandscape
+              ? constraints.maxHeight * 0.4
+              : constraints.maxHeight * 0.5;
+
           return Column(
             children: [
               Container(
-                height: constraints.maxHeight * 0.5,
+                height: topContainerHeight,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
                     image: AssetImage('assets/images/temple.jpg'),
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fill,
                   ),
                 ),
                 child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        SizedBox(
-                          height: 40,
-                          child: TextField(
-                            controller: inputController,
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(fontSize: 20, color: Color.fromRGBO(218, 165, 32, 1)),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                            ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      SizedBox(
+                        height: textFieldHeight,
+                        child: TextField(
+                          controller: inputController,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            color: const Color.fromRGBO(218, 165, 32, 1),
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black,
+                                offset: Offset(1, 1),
+                              ),
+                            ],
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
                           ),
                         ),
-                        SizedBox(
-                          height: 40,
-                          child: TextField(
-                            controller: resultController,
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(fontSize: 20, color: Color.fromRGBO(218, 165, 32, 1)),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                            ),
+                      ),
+                      SizedBox(
+                        height: textFieldHeight,
+                        child: TextField(
+                          controller: resultController,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            color: const Color.fromRGBO(218, 165, 32, 1),
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black,
+                                offset: Offset(1, 1),
+                              ),
+                            ],
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
               ),
               Expanded(
                 child: Container(
@@ -141,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         final double cellWidth = gridConstraints.maxWidth / 5;
                         final double cellHeight = gridConstraints.maxHeight / 4;
                         final double aspectRatio = cellWidth / cellHeight;
-                        
+
                         return GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -182,7 +220,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ],
           );
-        }
+        },
       ),
     );
   }
