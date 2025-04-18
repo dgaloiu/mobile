@@ -87,11 +87,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-
-    final double textFieldHeight = screenSize.height * 0.06;
-    final double fontSize = screenSize.width * 0.05;
+    //final screenSize = MediaQuery.of(context).size;
+    final orientation = MediaQuery.of(context).orientation;
+    final double fontSize = 20;
 
     return Scaffold(
       appBar: AppBar(
@@ -100,127 +98,105 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
         centerTitle: true,
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final topContainerHeight = isLandscape
-              ? constraints.maxHeight * 0.4
-              : constraints.maxHeight * 0.5;
-
-          return Column(
-            children: [
-              Container(
-                height: topContainerHeight,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/temple.jpg'),
-                    fit: BoxFit.fill,
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      SizedBox(
-                        height: textFieldHeight,
-                        child: TextField(
-                          controller: inputController,
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            color: const Color.fromRGBO(218, 165, 32, 1),
-                            shadows: const [
-                              Shadow(
-                                color: Colors.black,
-                                offset: Offset(1, 1),
-                              ),
-                            ],
-                          ),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: textFieldHeight,
-                        child: TextField(
-                          controller: resultController,
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            color: const Color.fromRGBO(218, 165, 32, 1),
-                            shadows: const [
-                              Shadow(
-                                color: Colors.black,
-                                offset: Offset(1, 1),
-                              ),
-                            ],
-                          ),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+      body: Column(
+        children: [
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: orientation == Orientation.portrait ? AssetImage('assets/images/temple.jpg'): AssetImage('assets/images/temple_h.png'),
+                  fit: BoxFit.fill,
                 ),
               ),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.black,
-                  child: Padding(
-                    padding: EdgeInsets.all(constraints.maxWidth * 0.01),
-                    child: LayoutBuilder(
-                      builder: (context, gridConstraints) {
-                        final double cellWidth = gridConstraints.maxWidth / 5;
-                        final double cellHeight = gridConstraints.maxHeight / 4;
-                        final double aspectRatio = cellWidth / cellHeight;
-
-                        return GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: 20,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            mainAxisSpacing: 4,
-                            crossAxisSpacing: 4,
-                            childAspectRatio: aspectRatio,
-                          ),
-                          itemBuilder: (context, index) {
-                            return ElevatedButton(
-                              onPressed: () => handleButtonPress(buttonLabels[index]),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color.fromRGBO(218, 165, 32, 1),
-                                foregroundColor: getButtonColor(buttonLabels[index]),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                padding: EdgeInsets.zero,
-                              ),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  buttonLabels[index],
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Flexible(
+                      child: TextField(
+                        controller: inputController,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          color: const Color.fromRGBO(218, 165, 32, 1),
+                          shadows: const [Shadow(color: Colors.black, offset: Offset(1, 1))],
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                        ),
+                      ),
                     ),
-                  ),
+                    Flexible(
+                      child: TextField(
+                        controller: resultController,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          color: const Color.fromRGBO(218, 165, 32, 1),
+                          shadows: const [Shadow(color: Colors.black, offset: Offset(1, 1))],
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          );
-        },
+            ),
+          ),
+          
+          Expanded(
+            flex: 1,
+            child: Container(
+              width: double.infinity,
+              color: Colors.black,
+              child: LayoutBuilder(
+                builder: (context, gridConstraints) {
+                  final double cellWidth = gridConstraints.maxWidth / 5;
+                  final double cellHeight = gridConstraints.maxHeight / 4;
+                  final double aspectRatio = cellWidth / cellHeight;
+                  
+                  return GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: 20,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5,
+                      mainAxisSpacing: 4,
+                      crossAxisSpacing: 4,
+                      childAspectRatio: aspectRatio,
+                    ),
+                    itemBuilder: (context, index) {
+                      return ElevatedButton(
+                        onPressed: () => handleButtonPress(buttonLabels[index]),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color.fromRGBO(218, 165, 32, 1),
+                          foregroundColor: getButtonColor(buttonLabels[index]),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            buttonLabels[index],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
