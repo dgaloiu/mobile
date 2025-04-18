@@ -105,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: orientation == Orientation.portrait ? AssetImage('assets/images/temple.jpg'): AssetImage('assets/images/temple_h.png'),
+                  image: orientation == AssetImage('assets/images/temple_h.png'),
                   fit: BoxFit.fill,
                 ),
               ),
