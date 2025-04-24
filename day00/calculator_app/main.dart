@@ -94,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
             for (int i = 1; i < parts.length; i++) {
 
               String operator = operators[i - 1];
-              String secondPart = parts[i];
+              String secondPart = parts[i].toString();
               if (operator == '+' || operator == '-'){
                 if (i == parts.length - 1) {
                   result += double.parse(firstPart).toString()+operator+double.parse(secondPart).toString();
@@ -123,10 +123,9 @@ class _MyHomePageState extends State<MyHomePage> {
           else {
             result = firstPart;
           }
-
           parts = result.split(RegExp(r'(\+|\-)'));
           operators = result.replaceAll(RegExp(r'[0-9]'), '');
-          result = parts[0];
+          result = parts[0].toString();
           if(parts.length != 1){
             result = parts[0];
             for (int i = 1; i < parts.length;i++){
