@@ -225,8 +225,16 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
             flex: 1,
             child: Container(
+            decoration: BoxDecoration(
+              color:goldColor,
+              border: Border(
+                left: BorderSide(color: goldColor, width: 4.0),
+                right: BorderSide(color: goldColor, width: 4.0),
+                top: BorderSide(color: goldColor, width: 4.0),
+                bottom: BorderSide(color: goldColor, width: 4.0),
+                ),
+              ),
               width: double.infinity,
-              color: goldColor,
               child: LayoutBuilder(
                 builder: (context, gridConstraints) {
                   final double cellWidth = gridConstraints.maxWidth / 5;
