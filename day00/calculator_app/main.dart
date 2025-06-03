@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math' as Math;
 
 void main() {
   runApp(const MyApp());
@@ -46,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     inputController.text = "0";
-    resultController.text = "0";
+    resultController.text = "";
   }
 
   @override
@@ -68,6 +69,19 @@ class _MyHomePageState extends State<MyHomePage> {
     return inputController.text == '0';
   }
 
+  bool hasConsecutiveMinusSigns(String text, int position) {
+    // Check if there are already 2 consecutive minus signs
+    if (position >= 2) {
+      return text[position - 1] == '-' && text[position - 2] == '-';
+    }
+    return false;
+  }
+
+  bool isLastCharDecimalPoint(String text) {
+    if (text.isEmpty) return false;
+    return text[text.length - 1] == '.';
+  }
+
   void handleButtonPress(String buttonText) {
     print('Button pressed: $buttonText');
 
@@ -75,113 +89,313 @@ class _MyHomePageState extends State<MyHomePage> {
       inputController.text = inputController.text.isNotEmpty && inputController.text.length != 1
           ? inputController.text.substring(0, inputController.text.length - 1)
           : '0';
+      updateTemporaryResult(); // Update result after backspace
     } 
     else if (buttonText == 'AC') {
       inputController.text = '0';
-      resultController.text = '0';
+      resultController.text = '';
     } 
-
-    else if (buttonText == '=') { // manage negative numbers
+    else if (buttonText == '=') {
       if (inputController.text.isNotEmpty && !isInitialState()) {
         try {
           String expression = inputController.text.replaceAll('\n', '');
-          List parts = expression.split(RegExp(r'(\+|\-|\*|\/)'));
-          String operators = expression.replaceAll(RegExp(r'[0-9]'), '');
-          String result = '';
-          String firstPart = parts[0];
-
-          if(parts.length != 1){
-            for (int i = 1; i < parts.length; i++) {
-
-              String operator = operators[i - 1];
-              String secondPart = parts[i].toString();
-              if (operator == '+' || operator == '-'){
-                if (i == parts.length - 1) {
-                  result += double.parse(firstPart).toString()+operator+double.parse(secondPart).toString();
+          
+          List<ExpressionPart> numbers = [];
+          List<String> operators = [];
+          
+          String currentNumber = '';
+          bool isNegative = false;
+          
+          for (int i = 0; i < expression.length; i++) {
+            String char = expression[i];
+            
+            if (isDigit(char) || char == '.') {
+              currentNumber += char;
+            } 
+            else if (char == '-') {
+              if (i == 0 || isOperator(expression[i-1])) {
+                isNegative = true;
+              } 
+              else {
+                if (currentNumber.isNotEmpty) {
+                  numbers.add(ExpressionPart(currentNumber, isNegative: isNegative));
+                  currentNumber = '';
+                  isNegative = false;
                 }
-                else {
-                  result += double.parse(firstPart).toString() + operator;
-                }
-                firstPart = secondPart;
-              }
-              else if (operator == '*') {
-                String tmp= (double.parse(firstPart) * double.parse(secondPart)).toString();
-                firstPart = tmp;
-                if (i == parts.length - 1) {
-                  result += double.parse(firstPart).toString();
-                }
-              }
-              else if (operator == '/') {
-                String tmp= (double.parse(firstPart) / double.parse(secondPart)).toString();
-                firstPart = tmp;
-                if (i == parts.length - 1) {
-                  result += double.parse(firstPart).toString();
-                }
+                operators.add(char);
               }
             }
-          }
-          else {
-            result = firstPart;
-          }
-          parts = result.split(RegExp(r'(\+|\-)'));
-          operators = result.replaceAll(RegExp(r'[0-9]'), '');
-          result = parts[0].toString();
-          if(parts.length != 1){
-            result = parts[0];
-            for (int i = 1; i < parts.length;i++){
-              String operator = operators[i - 1];
-              if (operator == '+'){
-                result = (double.parse(result) + double.parse(parts[i])).toString();
+            else if (isOperator(char)) {
+              if (currentNumber.isNotEmpty) {
+                numbers.add(ExpressionPart(currentNumber, isNegative: isNegative));
+                currentNumber = '';
+                isNegative = false;
               }
-              else if (operator == '-'){
-                result = (double.parse(result) - double.parse(parts[i])).toString();
-              }
+              operators.add(char);
             }
           }
-
-          if (result.contains('.') && result.substring(result.indexOf('.')) == '.0') {
-            result = result.substring(0, result.indexOf('.'));
+          
+          if (currentNumber.isNotEmpty) {
+            numbers.add(ExpressionPart(currentNumber, isNegative: isNegative));
           }
-          else if (result=="Infinity") {
-            setState(() {
-              showGochaImage = true;
-            });
-            Timer(Duration(seconds: 1), () {
+          
+          int i = 0;
+          while (i < operators.length) {
+            if (operators[i] == '*' || operators[i] == '/') {
+              if (operators[i] == '*') {
+                double result = numbers[i].toDouble() * numbers[i + 1].toDouble();
+                numbers[i] = ExpressionPart(result.abs().toString(), isNegative: result < 0);
+              } else if (operators[i] == '/') {
+                if (numbers[i + 1].toDouble() == 0) {
+                  setState(() {
+                    showGochaImage = true;
+                  });
+                  Timer(Duration(seconds: 1), () {
+                    setState(() {
+                      showGochaImage = false;
+                    });
+                  });
+                  inputController.text = '0';
+                  resultController.text = '';
+                  print("You really thought you could divide by zero? Gocha!");
+                  return;
+                }
+                double result = numbers[i].toDouble() / numbers[i + 1].toDouble();
+                numbers[i] = ExpressionPart(result.abs().toString(), isNegative: result < 0);
+              }
+              
+              numbers.removeAt(i + 1);
+              operators.removeAt(i);
+            } else {
+              i++;
+            }
+          }
+          
+          if (numbers.isNotEmpty) {
+            double result = numbers[0].toDouble();
+            
+            for (int i = 0; i < operators.length; i++) {
+              if (operators[i] == '+') {
+                result += numbers[i + 1].toDouble();
+              } else if (operators[i] == '-') {
+                result -= numbers[i + 1].toDouble();
+              }
+            }
+            
+            String resultString = result.toString();
+            if (resultString.contains('.') && double.parse(resultString) == double.parse(resultString).truncateToDouble()) {
+              resultString = double.parse(resultString).truncate().toString();
+            }
+            
+            if (resultString == "Infinity" || resultString == "NaN") {
               setState(() {
-                showGochaImage = false;
+                showGochaImage = true;
               });
-            });
+              Timer(Duration(seconds: 1), () {
+                setState(() {
+                  showGochaImage = false;
+                });
+              });
+              inputController.text = '0';
+              resultController.text = '';
+              print("You really thought you could divide by zero? Gocha!");
+              return;
+            }
+            
+            inputController.text = resultString;
+            resultController.text = '';
+          } else {
             inputController.text = '0';
-            result = '0';
-            print("You really thought you could divide by zero? Gocha!");
+            resultController.text = '';
           }
-          resultController.text = result;
         }
         catch (e) {
-          resultController.text = 'Error';
+          print("Calculation error: $e");
+          resultController.text = '';
         }
       }
     } 
-
     else if (buttonText == ' ') {
       // Toggle Roman Numerals if doable
     }
-
-    else { //manage negative numbers
-      if (isInitialState() && (isDigit(buttonText) /*|| buttonText=='-'*/) && buttonText != '00') {
+    else if (buttonText == '-') {
+      if (isInitialState()) {
         inputController.text = buttonText;
+        return;
+      }
+      
+      // Prevent adding minus after a decimal point
+      if (isLastCharDecimalPoint(inputController.text)) {
+        return;
+      }
+      
+      String currentInput = inputController.text;
+      int length = currentInput.length;
+      
+      if (length > 0 && currentInput[length - 1] == '-') {
+        if ((length >= 2 && isOperator(currentInput[length - 2])) || length == 1) {
+          return;
+        }
+      }
+      
+      if (length > 0 && isOperator(currentInput[length - 1])) {
+        inputController.text += buttonText;
+        return;
+      }
+      
+      inputController.text += buttonText;
+    }
+    else if (buttonText == '.' &&isInitialState()) {
+        inputController.text = "0.";
+        return;
+    }
+    else {
+      if (isInitialState() && (isDigit(buttonText) || buttonText == '.') && buttonText != '00') {
+        inputController.text = buttonText;
+        resultController.text = '';
       }
       else if (isOperator(buttonText) && (inputController.text.isNotEmpty && !isInitialState()
             && !isOperator(inputController.text[inputController.text.length - 1]))) {
-          inputController.text += buttonText;
-      }
-      else if (buttonText == '.' && !inputController.text.contains('.')) { //handle mutliple float numbers
-          inputController.text += buttonText;
-          }
-      else if (!isOperator(buttonText) && !isInitialState() && buttonText != '.') { //limit to 15 digits
+        if (isLastCharDecimalPoint(inputController.text)) {
+          return;
+        }
         inputController.text += buttonText;
       }
+      else if (buttonText == '.') {
+        
+        String currentInput = inputController.text;
+        int lastOperatorIndex = -1;
+        
+        for (int i = currentInput.length - 1; i >= 0; i--) {
+          if (isOperator(currentInput[i])) {
+            lastOperatorIndex = i;
+            break;
+          }
+        }
+        
+        String currentNumber = lastOperatorIndex == -1 
+            ? currentInput 
+            : currentInput.substring(lastOperatorIndex + 1);
+        
+        if (!currentNumber.contains('.')) {
+          if (currentNumber.isEmpty) {
+            inputController.text += '0';
+          }
+          inputController.text += buttonText;
+          updateTemporaryResult();
+        }
+      }
+      else if (!isOperator(buttonText) && !isInitialState() && buttonText != '.') {
+        inputController.text += buttonText;
+        updateTemporaryResult();
+      }
     }
+  }
+  
+  void updateTemporaryResult() {
+    String expression = inputController.text;
+    
+    if (!hasOperatorAndNumberAfter(expression)) {
+      resultController.text = '';
+      return;
+    }
+    try {
+      List<ExpressionPart> numbers = [];
+      List<String> operators = [];
+      
+      String currentNumber = '';
+      bool isNegative = false;
+      
+      for (int i = 0; i < expression.length; i++) {
+        String char = expression[i];
+        
+        if (isDigit(char) || char == '.') {
+          currentNumber += char;
+        } 
+        else if (char == '-') {
+          if (i == 0 || isOperator(expression[i-1])) {
+            isNegative = true;
+          } 
+          else {
+            if (currentNumber.isNotEmpty) {
+              numbers.add(ExpressionPart(currentNumber, isNegative: isNegative));
+              currentNumber = '';
+              isNegative = false;
+            }
+            operators.add(char);
+          }
+        }
+        else if (isOperator(char)) {
+          if (currentNumber.isNotEmpty) {
+            numbers.add(ExpressionPart(currentNumber, isNegative: isNegative));
+            currentNumber = '';
+            isNegative = false;
+          }
+          operators.add(char);
+        }
+      }
+      if (currentNumber.isNotEmpty) {
+        numbers.add(ExpressionPart(currentNumber, isNegative: isNegative));
+      }
+      if (numbers.isEmpty || (numbers.length - operators.length) > 1) {
+        resultController.text = '';
+        return;
+      }
+      int i = 0;
+      while (i < operators.length) {
+        if (operators[i] == '*' || operators[i] == '/') {
+          if (operators[i] == '*') {
+            double result = numbers[i].toDouble() * numbers[i + 1].toDouble();
+            numbers[i] = ExpressionPart(result.abs().toString(), isNegative: result < 0);
+          } else if (operators[i] == '/') {
+            if (numbers[i + 1].toDouble() == 0) {
+              resultController.text = 'Error: Division by zero';
+              return;
+            }
+            double result = numbers[i].toDouble() / numbers[i + 1].toDouble();
+            numbers[i] = ExpressionPart(result.abs().toString(), isNegative: result < 0);
+          }
+          
+          numbers.removeAt(i + 1);
+          operators.removeAt(i);
+        } else {
+          i++;
+        }
+      }
+      if (numbers.isNotEmpty) {
+        double result = numbers[0].toDouble();
+        
+        for (int i = 0; i < operators.length; i++) {
+          if (operators[i] == '+') {
+            result += numbers[i + 1].toDouble();
+          } else if (operators[i] == '-') {
+            result -= numbers[i + 1].toDouble();
+          }
+        }
+        String resultString = result.toString();
+        if (resultString.contains('.') && double.parse(resultString) == double.parse(resultString).truncateToDouble()) {
+          resultString = double.parse(resultString).truncate().toString();
+        }
+        
+        resultController.text = resultString;
+      }
+    }
+    catch (e) {
+      print("Temporary calculation error: $e");
+    }
+  }
+  
+  bool hasOperatorAndNumberAfter(String expression) {
+    bool hasOperator = false;
+    
+    for (int i = 0; i < expression.length; i++) {
+      if (isOperator(expression[i])) {
+        hasOperator = true;
+      } else if (hasOperator && (isDigit(expression[i]) || expression[i] == '.')) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Color getButtonColor(String buttonText) {
@@ -344,5 +558,23 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
     );
+  }
+}
+
+// Add this class after the _MyHomePageState class declaration
+class ExpressionPart {
+  String value;
+  bool isNegative;
+  
+  ExpressionPart(this.value, {this.isNegative = false});
+  
+  double toDouble() {
+    double val = double.parse(value);
+    return isNegative ? -val : val;
+  }
+  
+  @override
+  String toString() {
+    return isNegative ? '-$value' : value;
   }
 }
